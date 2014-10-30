@@ -314,8 +314,9 @@ struct rt_rq {
 
 /* Round Robin classes' reltaed field in a runqueue */
 struct grr_rq {
-	unsigned long rt_nr_running;
-	struct list_head grr_rq_list;	
+	unsigned long grr_nr_running;
+	struct list_head grr_rq_list;
+	spinlock_t grr_rq_lock;
 }
 
 #ifdef CONFIG_SMP

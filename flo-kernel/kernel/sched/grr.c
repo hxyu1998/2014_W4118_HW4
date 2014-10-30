@@ -6,14 +6,22 @@ static DEFINE_SPINLOCK()
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	struct sched_grr_entity *grr_se = &p->grr_se;
-	
+	struct rq *rq = task_rq(p);
+	struct grr_rq *grr_rq = &rq->grr;
+
+	spin_lock(&grr_rq->grr_rq_lock);
+
+	list_del(&grr_se->run_list);
+	--grr_rq->grr_nr_running;
+
+	spin_unlock(&grr_rq->grr_rq_lock);
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	struct sched_grr_entity *grr_se = &p->grr_se;
 	/*
-	list_add(&grr_se->runlist, 		
+	list_add(&grr_se->run_list, 		
 	*/
 }
 
@@ -30,8 +38,35 @@ static struct task_struct *pick_next_task_grr(struct rq *rq)
 {
 }
 
+
+/* Copy from update_curr_rt in rt.c, remove what are rt particulat parts.*/
+static void update_curr_grr(sturct rq *rq)
+{
+	struct task_struct *curr = rt->curr;
+	struct sched_grr_entity *grr_se = &curr->grr;
+	
+	u64 delta_exec;
+	
+	if (curr->sched_class != &grr_sched_class)
+		return;
+
+	delta_exec = rq->clock_task - curr->sched_start;
+	if(unlikely((s64)delta_exec < 0))
+		delta_exec = 0;
+
+	schedstat_set(curr->se.statistics.exec_max,
+			max(curr->se.statistics.exec_max, delta_exec));
+
+	curr->se.sum_exec_runtime += delta_exec;
+	account_group_exec_runtime(curr, delta_exec);
+
+	curr->se.exec_start = rq->clock_task;
+	cpuacct_charge(curr, delta_exec);
+}
+
 static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
 {
+	update_curr_grr(rq);
 }
 
 static void task_tick_grr(struct rq *rq, struct task_struct *curr, int queued)
