@@ -5,12 +5,16 @@ static DEFINE_SPINLOCK()
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	struct sched_grr_entity *grr_entity = &p->grr;
+	struct sched_grr_entity *grr_se = &p->grr_se;
 	
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
+	struct sched_grr_entity *grr_se = &p->grr_se;
+	/*
+	list_add(&grr_se->runlist, 		
+	*/
 }
 
 static void yield_task_grr(struct rq *rq)
