@@ -40,7 +40,6 @@ static void check_preempt_curr_grr(struct rq *rq,
 
 static struct task_struct *pick_next_task_grr(struct rq *rq, struct task_struct *prev)
 {
-	put_prev_task(rq, prev);
 	struct list_head *temp = prev->sched_grr_entity.run_list.next;
 	struct sched_grr_entity *tmp = list_entry(temp, struct sched_grr_entiy, run_list);
 	return container_of(tmp, struct task_struct, grr);
