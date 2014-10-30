@@ -79,6 +79,7 @@ extern struct mutex sched_domains_mutex;
 
 struct cfs_rq;
 struct rt_rq;
+struct grr_rq;
 
 static LIST_HEAD(task_groups);
 
@@ -311,6 +312,11 @@ struct rt_rq {
 #endif
 };
 
+/* Round Robin classes' reltaed field in a runqueue */
+struct grr_rq {
+		
+}
+
 #ifdef CONFIG_SMP
 
 /*
@@ -372,7 +378,8 @@ struct rq {
 
 	struct cfs_rq cfs;
 	struct rt_rq rt;
-
+	struct grr_rq grr;
+	
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	/* list of leaf cfs_rq on this cpu: */
 	struct list_head leaf_cfs_rq_list;
