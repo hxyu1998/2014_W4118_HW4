@@ -15,6 +15,7 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 
 	spin_lock(&grr_rq->grr_rq_lock);
 
+	update_curr_grr(rq);
 	list_del(&grr_se->run_list);
 	--grr_rq->grr_nr_running;
 
