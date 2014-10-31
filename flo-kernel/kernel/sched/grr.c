@@ -78,8 +78,38 @@ static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
 {
 }
 
-static void task_tick_grr(struct rq *rq, struct task_struct *curr, int queued)
+static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 {
+	struct sched_grr_entity *grr_se = &p->grr;
+
+	//	update_curr_rt(grr);
+		watchdog(rq, p);
+
+		/*
+		* RR tasks need a special form of timeslice management.
+		* FIFO tasks have no timeslices.
+		*/
+	
+	if (p->policy != SCHED_RR)
+		return;
+
+	if (--p->grr.time_slice)
+		return;
+
+		p->grr.time_slice = sched_rr_timeslice;
+
+		/*	
+		* Requeue to the end of queue if we (and all of our ancestors) are not
+		* the only element on the queue
+		*/
+
+	for_each_sched_grr_entity(grr_se) {
+		if (grr_se->run_list.prev != grr_se->run_list.next) {
+			requeue_task_grr(rq, p, 0);
+			set_tsk_need_resched(p);
+			return;
+		}
+	}
 }
 
 static void set_curr_task_grr(struct rq *rq)
