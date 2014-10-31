@@ -7,14 +7,6 @@
 
 static DEFINE_SPINLOCK()
 
-static inline struct grr_rq_of_se(struct sched_grr_entity *grr_se)
-{
-	struct task_struct *p = grr_task_of(grr_se);
-	struct rq *rq = task_rq(p);
-
-	return &rq->grr;
-}
-
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	struct sched_grr_entity *grr_se = &p->grr_se;
@@ -33,7 +25,9 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	struct sched_grr_entity *grr_se = &p->grr_se;
-	struct grr_rq *grr_rq = grr_rq_of_se(grr_se);
+	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
+	struct rq *rq = task_rq(p);
+	struct grr_rq *grr_rq = rq->grr;
 	struct list_head *queue = grr_rq->grr_rq_list;
 	list_add(&grr_se->run_list, queue);
 	grr_rq->nr_running++; 		
