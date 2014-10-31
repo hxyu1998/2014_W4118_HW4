@@ -1,14 +1,9 @@
 /* new GRR schedule */
-#include <linux/sched.h>
-#include <linux/linkage.h>
-#include <linux/list.h>
-
-
-
-static DEFINE_SPINLOCK()
+#include "sched.h"
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
+	/*
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct rq *rq = task_rq(p);
 	struct grr_rq *grr_rq = &rq->grr;
@@ -20,38 +15,42 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	--grr_rq->grr_nr_running;
 
 	spin_unlock(&grr_rq->grr_rq_lock);
+	*/
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
+	/* maybe this can simplified 
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
 	struct rq *rq = task_rq(p);
 	struct grr_rq *grr_rq = rq->grr;
 	struct list_head *queue = grr_rq->grr_rq_list;
 	list_add(&grr_se->run_list, queue);
-	grr_rq->nr_running++; 		
+	grr_rq->nr_running++; 	
+	*/
+
+	struct sched_grr_entity *grr_se = &p->grr;
+	struct grr_rq *grr_rq = &rq->grr;
+	struct list_head *queue = &grr_rq->grr_rq_list;
+	list_add(&grr_se->run_list, queue);
+	grr_rq->grr_nr_running++;	
 }
 
 static void yield_task_grr(struct rq *rq)
 {
 }
 
-static void check_preempt_curr_grr(struct rq *rq,
-				struct task_struct *p, int flags)
-{
-}
-
 static struct task_struct *pick_next_task_grr(struct rq *rq, struct task_struct *prev)
 {
-	struct list_head *temp = prev->sched_grr_entity.run_list.next;
-	struct sched_grr_entity *tmp = list_entry(temp, struct sched_grr_entiy, run_list);
+	struct list_head *temp = prev->grr.run_list.next;
+	struct sched_grr_entity *tmp = list_entry(temp, struct sched_grr_entity, run_list);
 	return container_of(tmp, struct task_struct, grr);
 }
 
 
 /* Copy from update_curr_rt in rt.c, remove what are rt particulat parts.*/
-static void update_curr_grr(sturct rq *rq)
+/*static void update_curr_grr(sturct rq *rq)
 {
 	struct task_struct *curr = rt->curr;
 	struct sched_grr_entity *grr_se = &curr->grr;
@@ -73,11 +72,10 @@ static void update_curr_grr(sturct rq *rq)
 
 	curr->se.exec_start = rq->clock_task;
 	cpuacct_charge(curr, delta_exec);
-}
+}*/
 
 static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
 {
-	update_curr_grr(rq);
 }
 
 static void task_tick_grr(struct rq *rq, struct task_struct *curr, int queued)
@@ -93,7 +91,7 @@ static void check_preempt_curr_grr(struct rq *rq,
 {
 }
 
-static void switch_to_grr(struct rq *rq, struct task_struct *p)
+static void switched_to_grr(struct rq *rq, struct task_struct *p)
 {
 }
 
@@ -105,7 +103,7 @@ static unsigned int get_rr_interval_grr(struct rq *rq, struct task_struct *t)
 {
 }
 
-static const struct sched_class grr_sched_class = {
+const struct sched_class grr_sched_class = {
 	.next			= &fair_sched_class,
 	.dequeue_task		= dequeue_task_grr,
 	.enqueue_task		= enqueue_task_grr,

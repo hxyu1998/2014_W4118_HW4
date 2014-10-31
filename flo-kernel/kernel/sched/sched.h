@@ -317,7 +317,7 @@ struct grr_rq {
 	unsigned long grr_nr_running;
 	struct list_head grr_rq_list;
 	spinlock_t grr_rq_lock;
-}
+};
 
 #ifdef CONFIG_SMP
 
@@ -355,6 +355,7 @@ extern struct root_domain def_root_domain;
  * (such as the load balancing or the thread migration code), lock
  * acquire operations must be ordered by ascending &runqueue.
  */
+
 struct rq {
 	/* runqueue lock: */
 	raw_spinlock_t lock;
