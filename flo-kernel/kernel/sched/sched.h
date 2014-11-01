@@ -316,7 +316,7 @@ struct rt_rq {
 struct grr_rq {
 	unsigned long grr_nr_running;
 	struct list_head grr_rq_list;
-	spinlock_t grr_rq_lock;
+	raw_spinlock_t grr_rq_lock;
 };
 
 #ifdef CONFIG_SMP
