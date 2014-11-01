@@ -3,19 +3,15 @@
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	/*
+	
 	struct sched_grr_entity *grr_se = &p->grr;
-	struct rq *rq = task_rq(p);
 	struct grr_rq *grr_rq = &rq->grr;
 
-	spin_lock(&grr_rq->grr_rq_lock);
-
-	update_curr_grr(rq);
-	list_del(&grr_se->run_list);
+	raw_spin_lock(&grr_rq->grr_rq_lock);
+	list_del_init(&grr_se->run_list);
 	--grr_rq->grr_nr_running;
-
-	spin_unlock(&grr_rq->grr_rq_lock);
-	*/
+	raw_spin_unlock(&grr_rq->grr_rq_lock);
+	dec_nr_running(rq);
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
@@ -35,6 +31,7 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	struct list_head *queue = &grr_rq->grr_rq_list;
 	list_add(&grr_se->run_list, queue);
 	grr_rq->grr_nr_running++;	
+	inc_nr_running(rq);
 }
 
 static void yield_task_grr(struct rq *rq)
@@ -82,7 +79,6 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 {
 	struct sched_grr_entity *grr_se = &p->grr;
 
-	//	update_curr_rt(grr);
 		watchdog(rq, p);
 
 		/*
