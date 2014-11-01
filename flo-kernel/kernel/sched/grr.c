@@ -29,13 +29,32 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct grr_rq *grr_rq = &rq->grr;
 	struct list_head *queue = &grr_rq->grr_rq_list;
-	list_add(&grr_se->run_list, queue);
-	grr_rq->grr_nr_running++;	
+
+	/*Ethan: I changed list_add to list_add_tail.*/
+	raw_spin_lock(&grr_rq->grr_rq_lock);
+	list_add_tail(&grr_se->run_list, queue);
+	grr_rq->grr_nr_running++;
+	raw_spin_unlock(&grr_rq->grr_rq_lock);	
 	inc_nr_running(rq);
+}
+
+static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
+{
+	struct sched_grr_entity *grr_se = &p->grr;
+	struct grr_rq *grr_rq = &rq->grr;
+	struct list_head *head = &grr_rq->grr_rq_list;
+
+	if (sizeof(grr_rq->grr_nr_running) == 1)
+		return;
+	
+	raw_spin_lock(&grr_rq->grr_rq_lock);
+	list_move_tail(&grr.se->run_list, head);
+	raw_spin_unlock(&grr_rq->grr_rq_lock);
 }
 
 static void yield_task_grr(struct rq *rq)
 {
+	requeue_task_grr(rq, rq->curr , 0);
 }
 
 static struct task_struct *pick_next_task_grr(struct rq *rq, struct task_struct *prev)
