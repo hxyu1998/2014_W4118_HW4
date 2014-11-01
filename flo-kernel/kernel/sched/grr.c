@@ -38,38 +38,21 @@ static void yield_task_grr(struct rq *rq)
 {
 }
 
-static struct task_struct *pick_next_task_grr(struct rq *rq, struct task_struct *prev)
+static struct task_struct *pick_next_task_grr(struct rq *rq)
 {
-	struct list_head *temp = prev->grr.run_list.next;
-	struct sched_grr_entity *tmp = list_entry(temp, struct sched_grr_entity, run_list);
-	return container_of(tmp, struct task_struct, grr);
+	struct sched_grr_entity *grr_se;
+	struct task_struct *p;
+	struct grr_rq *grr_rq;
+
+	grr_rq = &rq->grr;
+
+	if(!grr_rq->grr_nr_running)
+		return NULL;
+
+	struct list_head *queue = &grr_rq->grr_rq_list;
+	grr_se = list_entry(queue->next, struct sched_grr_entity, run_list);
+	return container_of(grr_se, struct task_struct, grr);
 }
-
-
-/* Copy from update_curr_rt in rt.c, remove what are rt particulat parts.*/
-/*static void update_curr_grr(sturct rq *rq)
-{
-	struct task_struct *curr = rt->curr;
-	struct sched_grr_entity *grr_se = &curr->grr;
-	
-	u64 delta_exec;
-	
-	if (curr->sched_class != &grr_sched_class)
-		return;
-
-	delta_exec = rq->clock_task - curr->sched_start;
-	if(unlikely((s64)delta_exec < 0))
-		delta_exec = 0;
-
-	schedstat_set(curr->se.statistics.exec_max,
-			max(curr->se.statistics.exec_max, delta_exec));
-
-	curr->se.sum_exec_runtime += delta_exec;
-	account_group_exec_runtime(curr, delta_exec);
-
-	curr->se.exec_start = rq->clock_task;
-	cpuacct_charge(curr, delta_exec);
-}*/
 
 static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
 {
