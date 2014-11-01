@@ -3,19 +3,19 @@
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	/*
+	
 	struct sched_grr_entity *grr_se = &p->grr;
-	struct rq *rq = task_rq(p);
+	/*struct rq *rq = task_rq(p);*/
 	struct grr_rq *grr_rq = &rq->grr;
 
 	spin_lock(&grr_rq->grr_rq_lock);
 
-	update_curr_grr(rq);
+	/*update_curr_grr(rq);*/
 	list_del(&grr_se->run_list);
 	--grr_rq->grr_nr_running;
 
 	spin_unlock(&grr_rq->grr_rq_lock);
-	*/
+	
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
