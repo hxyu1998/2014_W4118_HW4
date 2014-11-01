@@ -1259,7 +1259,7 @@ struct sched_grr_entity {
  * Timeslices get refilled after they expire.
  */
 #define RR_TIMESLICE		(100 * HZ / 1000)
-
+#define GRR_TIMESLICE		RR_TIMESLICE
 struct rcu_node;
 
 enum perf_event_task_context {
