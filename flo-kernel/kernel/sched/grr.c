@@ -159,3 +159,19 @@ const struct sched_class grr_sched_class = {
 	.prio_changed		= prio_changed_grr,
 	.switched_to		= switched_to_grr,
 };
+
+#ifdef CONFIG_SCHED_DEBUG
+extern void print_grr_rq(struct seq_file *m, int cpu, struct grr_rq *grr_rq);
+
+void print_grr_stats(struct seq_file *m, int cpu)
+{
+	struct rq *rq;
+	struct grr_rq *grr_rq;
+	rq = cpu_rq(cpu);
+	rcu_read_lock();
+	for (grr_rq = &rq->grr; grr_rq; grr_rq = NULL) {
+		print_grr_rq(m, cpu, grr_rq);
+	}
+	rcu_read_unlock();
+}
+#endif
