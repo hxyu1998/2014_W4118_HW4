@@ -3,7 +3,7 @@
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	printk("entering dequeue...\n");	
+	trace_printk("entering dequeue...\n");	
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct grr_rq *grr_rq = &rq->grr;
 
@@ -12,12 +12,12 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	--grr_rq->grr_nr_running;
 	raw_spin_unlock(&grr_rq->grr_rq_lock);
 	dec_nr_running(rq);
-	printk("leaving dequeue...\n");
+	trace_printk("leaving dequeue...\n");
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	printk("entering enqueue...\n");
+	trace_printk("entering enqueue...\n");
 	/* maybe this can simplified 
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
@@ -38,12 +38,12 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	grr_rq->grr_nr_running++;
 	raw_spin_unlock(&grr_rq->grr_rq_lock);	
 	inc_nr_running(rq);
-	printk("leaving enqueue...\n");
+	trace_printk("leaving enqueue...\n");
 }
 
 static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	printk("entering requeue...\n");
+	trace_printk("entering requeue...\n");
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct grr_rq *grr_rq = &rq->grr;
 	struct list_head *head = &grr_rq->grr_rq_list;
@@ -54,7 +54,7 @@ static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	raw_spin_lock(&grr_rq->grr_rq_lock);
 	list_move_tail(&grr_se->run_list, head);
 	raw_spin_unlock(&grr_rq->grr_rq_lock);
-	printk("leaving requeue...\n");
+	trace_printk("leaving requeue...\n");
 }
 
 static void yield_task_grr(struct rq *rq)
@@ -64,7 +64,7 @@ static void yield_task_grr(struct rq *rq)
 
 static struct task_struct *pick_next_task_grr(struct rq *rq)
 {
-	printk("entering pick_next_task_grr...\n");
+	trace_printk("entering pick_next_task_grr...\n");
 	struct sched_grr_entity *grr_se;
 	struct task_struct *p;
 	struct grr_rq *grr_rq;
@@ -77,7 +77,7 @@ static struct task_struct *pick_next_task_grr(struct rq *rq)
 	struct list_head *queue = &grr_rq->grr_rq_list;
 	grr_se = list_entry(queue->next, struct sched_grr_entity, run_list);
 	return container_of(grr_se, struct task_struct, grr);
-	printk("leaving pick_next_task_grr...\n");
+	trace_printk("leaving pick_next_task_grr...\n");
 }
 
 static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
@@ -101,7 +101,9 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 }
 
 static void set_curr_task_grr(struct rq *rq)
-{
+{	
+	trace_printk("entering set_curr_task_grr...\n");
+	trace_printk("leaving set_curr_task_grr...\n");
 }
 
 static void check_preempt_curr_grr(struct rq *rq,
@@ -111,10 +113,14 @@ static void check_preempt_curr_grr(struct rq *rq,
 
 static void switched_to_grr(struct rq *rq, struct task_struct *p)
 {
+	trace_printk("entering switched_to_grr...\n");
+	trace_printk("leaving switched_to_grr...\n");
 }
 
 static void prio_changed_grr(struct rq *rq, struct task_struct *p, int old)
 {
+	trace_printk("entering prio_changed_grr...\n");
+	trace_printk("leaving prio_changed_grr...\n");
 }
 
 static unsigned int get_rr_interval_grr(struct rq *rq, struct task_struct *t)
