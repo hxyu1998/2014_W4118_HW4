@@ -4,8 +4,11 @@
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	trace_printk("entering dequeue...\n");	
-	struct sched_grr_entity *grr_se = &p->grr;
-	struct grr_rq *grr_rq = &rq->grr;
+	struct sched_grr_entity *grr_se;
+	struct grr_rq *grr_rq;
+
+	grr_se = &p->grr;
+	grr_rq = &rq->grr;
 
 	raw_spin_lock(&grr_rq->grr_rq_lock);
 	list_del_init(&grr_se->run_list);
@@ -28,9 +31,13 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	grr_rq->nr_running++; 	
 	*/
 
-	struct sched_grr_entity *grr_se = &p->grr;
-	struct grr_rq *grr_rq = &rq->grr;
-	struct list_head *queue = &grr_rq->grr_rq_list;
+	struct sched_grr_entity *grr_se;
+	struct grr_rq *grr_rq;
+	struct list_head *queue;
+
+	grr_se = &p->grr;
+	grr_rq = &rq->grr;
+	queue = &grr_rq->grr_rq_list;
 
 	/*Ethan: I changed list_add to list_add_tail.*/
 	raw_spin_lock(&grr_rq->grr_rq_lock);
@@ -44,9 +51,13 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
 	trace_printk("entering requeue...\n");
-	struct sched_grr_entity *grr_se = &p->grr;
-	struct grr_rq *grr_rq = &rq->grr;
-	struct list_head *head = &grr_rq->grr_rq_list;
+	struct sched_grr_entity *grr_se;
+	struct grr_rq *grr_rq;
+	struct list_head *head;
+
+	grr_se = &p->grr;
+	grr_rq = &rq->grr;
+	head = &grr_rq->grr_rq_list;
 
 	if (sizeof(grr_rq->grr_nr_running) == 1)
 		return;
@@ -68,13 +79,14 @@ static struct task_struct *pick_next_task_grr(struct rq *rq)
 	struct sched_grr_entity *grr_se;
 	struct task_struct *p;
 	struct grr_rq *grr_rq;
+	struct list_head *queue;
 
 	grr_rq = &rq->grr;
 
 	if(!grr_rq->grr_nr_running)
 		return NULL;
 
-	struct list_head *queue = &grr_rq->grr_rq_list;
+	queue = &grr_rq->grr_rq_list;
 	grr_se = list_entry(queue->next, struct sched_grr_entity, run_list);
 	return container_of(grr_se, struct task_struct, grr);
 	trace_printk("leaving pick_next_task_grr...\n");
@@ -86,8 +98,9 @@ static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
 
 static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 {
-	struct sched_grr_entity *grr_se = &p->grr;
+	struct sched_grr_entity *grr_se;
 
+	grr_se = &p->grr;
 	if (--p->grr.time_slice)
 		return;
 
@@ -136,6 +149,61 @@ void init_grr_rq(struct grr_rq *grr_rq)
 	printk("leaving init_grr_rq...\n");
 }
 
+/*====================For SMP====================*/
+#ifdef CONFIG_SMP
+
+static void rq_online_grr(struct rq *rq)
+{
+}
+
+static void rq_offline_grr(struct rq *rq)
+{
+}
+
+static void switched_from_grr(struct rq *rq, struct task_struct *p)
+{
+}
+
+static void pre_schedule_grr(struct rq *rq, struct task_struct *prev)
+{
+}
+
+static void post_schedule_grr(struct rq *rq, struc)
+{
+}
+
+static void task_woken_grr(struct rq *rq, struct task_struct *p)
+{
+}
+
+static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
+{
+	struct rq *rq;
+	struct grr_rq = *grr_rq;
+	int cpu, idle_cpu;
+	long loading, min_loading;
+
+	min_loading = LONG_MAX;
+	idle_cpu = -1;
+	for_each_online_cpu(cpu) {
+		rq = cpu_rq(cpu);
+		grr_rq = &rq->grr;
+		loading = grr_rq->grr_nr_running;
+
+		if (loading < min_loading) {
+			min_loading = loading;
+			idle_cpu = cpu;
+		} 
+	}
+
+	if (idle_cpu == -1)
+		return task_cpu(p);
+	else
+		return idle_cpu;
+}
+
+#endif
+
 const struct sched_class grr_sched_class = {
 	.next			= &fair_sched_class,
 	.dequeue_task		= dequeue_task_grr,
@@ -147,6 +215,10 @@ const struct sched_class grr_sched_class = {
 
 #ifdef CONFIG_SMP
 	.select_task_rq		= select_task_rq_grr,
+	.rq_online		= rq_online_grr,
+	.rq_offline		= rq_offline_grr,
+	.task_woken		= task_woken_grr,
+	.switched_from		= switched_from_grr,
 	.pre_schedule		= pre_schedule_grr,
 	.post_schedule		= post_schedule_grr,
 #endif
