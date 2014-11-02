@@ -4062,7 +4062,12 @@ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
 	if (rt_prio(p->prio))
 		p->sched_class = &rt_sched_class;
 	else
-		p->sched_class = &fair_sched_class;
+	{
+		if (policy == SCHED_NORMAL)
+			p->sched_class = &fair_sched_class;
+		else if (policy == SCHED_GRR)
+			p->sched_class = &grr_sched_class;
+	}
 	set_load_weight(p);
 }
 
@@ -4106,6 +4111,7 @@ recheck:
 		policy &= ~SCHED_RESET_ON_FORK;
 
 		if (policy != SCHED_FIFO && policy != SCHED_RR &&
+				policy != SCHED_GRR &&
 				policy != SCHED_NORMAL && policy != SCHED_BATCH &&
 				policy != SCHED_IDLE)
 			return -EINVAL;
@@ -7003,6 +7009,7 @@ void __init sched_init(void)
 		rq->calc_load_update = jiffies + LOAD_FREQ;
 		init_cfs_rq(&rq->cfs);
 		init_rt_rq(&rq->rt, rq);
+		init_grr_rq(&rq->grr);
 #ifdef CONFIG_FAIR_GROUP_SCHED
 		root_task_group.shares = ROOT_TASK_GROUP_LOAD;
 		INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
