@@ -194,6 +194,8 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			mincpu = tempcpu;
 		}
 	}
+	
+	if  (min != max-1 || min != max) {
 	struct grr_rq *toberemoved, *tobeincreased;
 	struct list_head *headnodermv, *headnodeinc;	
 	
@@ -215,10 +217,8 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 	
         raw_spin_unlock(&tobeincreased->grr_rq_lock);
 	raw_spin_unlock(&toberemoved->grr_rq_lock);
-	
+	}
 } while( min != max-1 || min != max )
-
-
 }
 
 static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
