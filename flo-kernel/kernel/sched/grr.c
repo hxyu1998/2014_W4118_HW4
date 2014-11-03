@@ -1,7 +1,5 @@
 /* new GRR schedule */
 #include "sched.h"
-#include <linux/linkage.h>
-#include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/syscalls.h>
 #include <trace/events/sched.h>
@@ -172,6 +170,10 @@ void init_grr_rq(struct grr_rq *grr_rq)
 
 /*====================For SMP====================*/
 #ifdef CONFIG_SMP
+static unsigned long __read_mostly max_load_balance_interval = HZ / 10;
+static DEFINE_SPINLOCK(balancing);
+
+
 
 static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
@@ -250,8 +252,8 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 		if (idle != CPU_IDLE)
 			itvl *= sd->busy_factor;
 
-		itvl = msecs_to_jiffies(interval);
-		itvl = clamp(interval, 1UL, max_load_balance_interval);
+		itvl = msecs_to_jiffies(itvl);
+		itvl = clamp(itvl, 1UL, max_load_balance_interval);
 
 		need_serialize = sd->flags & SD_SERIALIZE;
 		if (need_serialize) {
@@ -259,7 +261,7 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 				goto out;
 		}
 
-		if (time_after_eq(jiffies, sd->last_balance + interval)) {
+		if (time_after_eq(jiffies, sd->last_balance + itvl)) {
 			if (load_balance_grr(cpu, rq, sd, idle, &balance))
 				idle = CPU_NOT_IDLE;
 			sd->last_balance = jiffies;
@@ -290,8 +292,13 @@ static void run_rebalance_domains_grr(struct softirq_action *h)
 	this_cpu = smp_processor_id();
 	this_rq = cpu_rq(this_cpu);
 	idle = this_rq->idle_balance ? CPU_IDLE : CPU_NOT_IDLE;
-	rebalance_domains(this_cpu, idle);
+	rebalance_domains_grr(this_cpu, idle);
 	/*nohz_idle_balance(this_cpu, idle);*/
+}
+
+static inline int on_null_domain(int cpu)
+{
+	return !rcu_dereference_sched(cpu_rq(cpu)->sd);
 }
 
 /*Ethan: looks like we just need to copy all the code from fair.c*/
@@ -322,7 +329,7 @@ static void pre_schedule_grr(struct rq *rq, struct task_struct *prev)
 {
 }
 
-static void post_schedule_grr(struct rq *rq, struc)
+static void post_schedule_grr(struct rq *rq)
 {
 }
 
@@ -333,7 +340,7 @@ static void task_woken_grr(struct rq *rq, struct task_struct *p)
 static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 {
 	struct rq *rq;
-	struct grr_rq = *grr_rq;
+	struct grr_rq *grr_rq;
 	int cpu, idle_cpu;
 	long loading, min_loading;
 
@@ -355,8 +362,6 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 	else
 		return idle_cpu;
 }
-
-static unsigned long __read_mostly max_load_balance_interval = HZ / 10;
 
 #endif
 
@@ -404,6 +409,9 @@ void print_grr_stats(struct seq_file *m, int cpu)
 }
 #endif
 
+__init void init_sched_grr_class(void)
+{
 #ifdef CONFIG_SMP
-	open_softirq(SCHED_GRR_SOFTIRQ, run_reblance_domains_grr);
-//#endif
+	open_softirq(SCHED_GRR_SOFTIRQ, run_rebalance_domains_grr);
+#endif
+}
