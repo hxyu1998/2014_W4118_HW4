@@ -113,9 +113,15 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 	}
 }
 
+/*Ethan: this seems is used for group task schedule.*/
 static void set_curr_task_grr(struct rq *rq)
 {	
 	trace_printk("entering set_curr_task_grr...\n");
+	struct task_struct *p;
+	
+	p = rq->curr;
+	p->se.exec_start = rq->clock_task;
+	
 	trace_printk("leaving set_curr_task_grr...\n");
 }
 
@@ -124,9 +130,15 @@ static void check_preempt_curr_grr(struct rq *rq,
 {
 }
 
+/*Ethan: this seems is used for group task schedule.*/
 static void switched_to_grr(struct rq *rq, struct task_struct *p)
 {
 	trace_printk("entering switched_to_grr...\n");
+	struct sched_grr_entity *grr_se;
+
+	grr_se = &p->grr;
+	grr_se->time_slice = GRR_TIMESLICE;
+ 	INIT_LIST_HEAD(&grr_se->run_list);
 	trace_printk("leaving switched_to_grr...\n");
 }
 
@@ -136,8 +148,12 @@ static void prio_changed_grr(struct rq *rq, struct task_struct *p, int old)
 	trace_printk("leaving prio_changed_grr...\n");
 }
 
+/*Ethan: Will be called by syscall scehd_rr_get_interval*/
 static unsigned int get_rr_interval_grr(struct rq *rq, struct task_struct *t)
 {
+	if (t == NULL)
+		return -EINVAL;
+	return GRR_TIMESLICE;
 }
 
 void init_grr_rq(struct grr_rq *grr_rq)
