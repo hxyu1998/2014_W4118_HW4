@@ -308,8 +308,8 @@ static void print_cpu(struct seq_file *m, int cpu)
 #undef P64
 #endif
 	spin_lock_irqsave(&sched_debug_lock, flags);
-	//print_cfs_stats(m, cpu);
-	//print_rt_stats(m, cpu);
+	print_cfs_stats(m, cpu);
+	print_rt_stats(m, cpu);
 	print_grr_stats(m, cpu);	
 
 	rcu_read_lock();
