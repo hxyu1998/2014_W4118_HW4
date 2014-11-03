@@ -72,6 +72,8 @@
 #include <linux/slab.h>
 #include <linux/init_task.h>
 #include <linux/binfmts.h>
+#include <linux/linkage.h>
+#include <linux/kernel.h>
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
@@ -86,6 +88,16 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
+
+/*sched_set_CPUgroup: 378*/
+#define FOREGROUND 1
+#define BACKGROUND 2
+
+SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
+{
+	return 0;
+}
+/*sched_set_CPUgroup: 378*/
 
 ATOMIC_NOTIFIER_HEAD(migration_notifier_head);
 

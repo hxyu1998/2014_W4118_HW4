@@ -1,6 +1,9 @@
 /* new GRR schedule */
 #include "sched.h"
+#include <linux/linkage.h>
+#include <linux/kernel.h>
 #include <linux/interrupt.h>
+#include <linux/syscalls.h>
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
