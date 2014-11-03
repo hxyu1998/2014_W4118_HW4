@@ -4,6 +4,7 @@
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/syscalls.h>
+#include <trace/events/sched.h>
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
@@ -213,22 +214,22 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 
 			list_add_tail(headnodermv->next, headnodeinc);
 			tobeincreased->grr_nr_running++;
-			inc_nr_running(&cpu_rq(min));
+			inc_nr_running(cpu_rq(min));
 
 			list_del_init(headnodermv->next);
 			--toberemoved->grr_nr_running;
-			dec_nr_running(&cpu_rq(max));
+			dec_nr_running(cpu_rq(max));
 
 			raw_spin_unlock(&tobeincreased->grr_rq_lock);
 			raw_spin_unlock(&toberemoved->grr_rq_lock);
 		}
-	} while (min != max-1 || min != max)
+	} while (min != max-1 || min != max);
 }
 
 static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 {
 	int balance;
-	struct rq = *rq;
+	struct rq *rq;
 	unsigned long itvl;
 	struct sched_domain *sd;
 	unsigned long next_balance = jiffies + 60 * HZ;
@@ -259,7 +260,7 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 		}
 
 		if (time_after_eq(jiffies, sd->last_balance + interval)) {
-			if (load_balance(cpu, rq, sd, idle, &balance))
+			if (load_balance_grr(cpu, rq, sd, idle, &balance))
 				idle = CPU_NOT_IDLE;
 			sd->last_balance = jiffies;
 		}
@@ -267,7 +268,7 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 			spin_unlock(&balancing);
 		}
 out:
-		if (timer_after(next_balance, sd->last_balance + itvl)) {
+		if (time_after(next_balance, sd->last_balance + itvl)) {
 			next_balance = sd->last_balance + itvl;
 			update_next_balance = 1;
 		}
@@ -405,4 +406,4 @@ void print_grr_stats(struct seq_file *m, int cpu)
 
 #ifdef CONFIG_SMP
 	open_softirq(SCHED_GRR_SOFTIRQ, run_reblance_domains_grr);
-#endif
+//#endif
