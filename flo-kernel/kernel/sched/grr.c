@@ -173,6 +173,52 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
 			int *balance)
 {
+	struct grr_rq *grr_rq;	
+	int tempcpu = 0, temp = 0, maxcpu = 0, mincpu = 0, max = 0, min = 1000;
+	struct rq *busiest;
+	tempcpu = this_cpu;
+	maxcpu = this_cpu;
+	mincpu = this_cpu;
+ do {
+	for_each_online_cpu(tempcpu){
+		busiest = cpu_rq(tempcpu);
+		grr_rq = &busiest->grr;
+		temp = grr_rq->grr_nr_running;
+
+                if (max <= temp) {
+                        max = temp;
+                        maxcpu = tempcpu;
+                }
+		if (temp < min) {
+			min = temp;
+			mincpu = tempcpu;
+		}
+	}
+	struct grr_rq *toberemoved, *tobeincreased;
+	struct list_head *headnodermv, *headnodeinc;	
+	
+	toberemoved = &cpu_rq(maxcpu)->grr;
+	tobeincreased = &cpu_rq(mincpu)->grr;
+	headnodermv = &toberemoved->grr_rq_list;
+	headnodeinc = &tobeincreased->grr_rq_list;
+
+	raw_spin_lock(&toberemoved->grr_rq_lock);
+	raw_spin_lock(&tobeincreased->grr_rq_lock);
+
+	list_add_tail(headnodermv->next, headnodeinc);
+        tobeincreased->grr_nr_running++;
+	inc_nr_running(&cpu_rq(min));
+
+        list_del_init(headnodermv->next);
+        --toberemoved->grr_nr_running;
+	dec_nr_running(&cpu_rq(max));
+	
+        raw_spin_unlock(&tobeincreased->grr_rq_lock);
+	raw_spin_unlock(&toberemoved->grr_rq_lock);
+	
+} while( min != max-1 || min != max )
+
+
 }
 
 static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
