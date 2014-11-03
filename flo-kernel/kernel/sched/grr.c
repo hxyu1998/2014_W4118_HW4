@@ -20,7 +20,7 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	trace_printk("entering enqueue...\n");
+	trace_printk("PID %d entering enqueue...\n", p->pid);
 	/* maybe this can simplified 
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
