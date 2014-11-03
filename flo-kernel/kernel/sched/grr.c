@@ -1,5 +1,6 @@
 /* new GRR schedule */
 #include "sched.h"
+#include <linux/interrupt.h>
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
@@ -113,9 +114,15 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 	}
 }
 
+/*Ethan: this seems is used for group task schedule.*/
 static void set_curr_task_grr(struct rq *rq)
 {	
 	trace_printk("entering set_curr_task_grr...\n");
+	struct task_struct *p;
+	
+	p = rq->curr;
+	p->se.exec_start = rq->clock_task;
+	
 	trace_printk("leaving set_curr_task_grr...\n");
 }
 
@@ -124,9 +131,15 @@ static void check_preempt_curr_grr(struct rq *rq,
 {
 }
 
+/*Ethan: this seems is used for group task schedule.*/
 static void switched_to_grr(struct rq *rq, struct task_struct *p)
 {
 	trace_printk("entering switched_to_grr...\n");
+	struct sched_grr_entity *grr_se;
+
+	grr_se = &p->grr;
+	grr_se->time_slice = GRR_TIMESLICE;
+ 	INIT_LIST_HEAD(&grr_se->run_list);
 	trace_printk("leaving switched_to_grr...\n");
 }
 
@@ -136,8 +149,12 @@ static void prio_changed_grr(struct rq *rq, struct task_struct *p, int old)
 	trace_printk("leaving prio_changed_grr...\n");
 }
 
+/*Ethan: Will be called by syscall scehd_rr_get_interval*/
 static unsigned int get_rr_interval_grr(struct rq *rq, struct task_struct *t)
 {
+	if (t == NULL)
+		return -EINVAL;
+	return GRR_TIMESLICE;
 }
 
 void init_grr_rq(struct grr_rq *grr_rq)
@@ -151,6 +168,24 @@ void init_grr_rq(struct grr_rq *grr_rq)
 
 /*====================For SMP====================*/
 #ifdef CONFIG_SMP
+
+static int load_balance_grr(int this_cpu, struct rq *this_rq,
+			struct sched_domain *sd, enum cpu_idle_type idle,
+			int *balance)
+{
+}
+
+static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
+{
+}
+
+static void run_rebalance_domains_grr(struct softirq_action *h)
+{
+}
+
+void trigger_load_balance_grr(struct rq *rq, int cpu)
+{
+}
 
 static void rq_online_grr(struct rq *rq)
 {
@@ -246,4 +281,8 @@ void print_grr_stats(struct seq_file *m, int cpu)
 	}
 	rcu_read_unlock();
 }
+#endif
+
+#ifdef CONFIG_SMP
+	open_softirq(SCHED_GRR_SOFTIRQ, run_reblance_domains_grr);
 #endif

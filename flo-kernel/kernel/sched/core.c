@@ -3055,7 +3055,11 @@ void scheduler_tick(void)
 
 #ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
-	trigger_load_balance(rq, cpu);
+	/*Ethan: grr balancing*/
+	if (curr->policy == SCHED_GRR)
+		trigger_load_balance_grr(rq, cpu);
+	else
+		trigger_load_balance(rq, cpu);
 #endif
 }
 

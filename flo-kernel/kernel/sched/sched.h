@@ -872,6 +872,8 @@ extern const struct sched_class grr_sched_class;
 #ifdef CONFIG_SMP
 
 extern void trigger_load_balance(struct rq *rq, int cpu);
+/*Ethan: grr balancing*/
+extern void trigger_load_balance_grr(struct rq *rq, int cpu);
 extern void idle_balance(int this_cpu, struct rq *this_rq);
 
 #else	/* CONFIG_SMP */

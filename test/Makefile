@@ -5,7 +5,7 @@ LDFLAGS := -static
 
 OBJECTS := test.o
 
-all: test 
+all: test
 
 
 : $(OBJECTS)
@@ -15,7 +15,7 @@ all: test
 	$(CC) $(CFLAGS) -c $^
 
 clean:
-	rm -f test 
+	rm -f test
 	rm -f test.o
 
 .PHONY: clean
