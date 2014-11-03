@@ -189,7 +189,7 @@ static void run_rebalance_domains_grr(struct softirq_action *h)
 	this_rq = cpu_rq(this_cpu);
 	idle = this_rq->idle_balance ? CPU_IDLE : CPU_NOT_IDLE;
 	rebalance_domains(this_cpu, idle);
-	nohz_idle_balance(this_cpu, idle);
+	/*nohz_idle_balance(this_cpu, idle);*/
 }
 
 /*Ethan: looks like we just need to copy all the code from fair.c*/
@@ -198,10 +198,10 @@ void trigger_load_balance_grr(struct rq *rq, int cpu)
 	if (time_after_eq(jiffies, rq->next_balance) &&
 			likely(!on_null_domain(cpu)))
 		raise_softirq(SCHED_GRR_SOFTIRQ);
-#ifdef CONFIG_NO_HZ
+/*#ifdef CONFIG_NO_HZ
 	if (nohz_kick_needed(rq, cpu) && likely(!on_null_domain(cpu)))
 		nohz_balancer_kick(cpu);
-#endif
+#endif*/
 }
 
 static void rq_online_grr(struct rq *rq)
