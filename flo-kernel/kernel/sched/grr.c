@@ -21,7 +21,7 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	trace_printk("entering enqueue...\n");
+	trace_printk("PID %d entering enqueue...\n", p->pid);
 	/* maybe this can simplified 
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
@@ -227,10 +227,27 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 
 static void run_rebalance_domains_grr(struct softirq_action *h)
 {
+	int this_cpu;
+	struct rq *this_rq;
+	enum cpu_idle_type idle;
+
+	this_cpu = smp_processor_id();
+	this_rq = cpu_rq(this_cpu);
+	idle = this_rq->idle_balance ? CPU_IDLE : CPU_NOT_IDLE;
+	rebalance_domains(this_cpu, idle);
+	/*nohz_idle_balance(this_cpu, idle);*/
 }
 
+/*Ethan: looks like we just need to copy all the code from fair.c*/
 void trigger_load_balance_grr(struct rq *rq, int cpu)
 {
+	if (time_after_eq(jiffies, rq->next_balance) &&
+			likely(!on_null_domain(cpu)))
+		raise_softirq(SCHED_GRR_SOFTIRQ);
+/*#ifdef CONFIG_NO_HZ
+	if (nohz_kick_needed(rq, cpu) && likely(!on_null_domain(cpu)))
+		nohz_balancer_kick(cpu);
+#endif*/
 }
 
 static void rq_online_grr(struct rq *rq)
