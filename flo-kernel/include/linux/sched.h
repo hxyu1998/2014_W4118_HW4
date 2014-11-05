@@ -1252,9 +1252,8 @@ struct sched_rt_entity {
 struct sched_grr_entity {
 	struct list_head run_list;
 	unsigned int time_slice;
-	int group;
-}
-;
+	unsigned int group;
+};
 
 /*
  * default timeslice is 100 msecs (used only for SCHED_RR tasks).

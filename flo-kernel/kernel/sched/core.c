@@ -6950,6 +6950,18 @@ void __init sched_init_smp(void)
 
 	init_hrtick();
 
+	bg_cpu_mask = CPU_MASK_NONE;
+	fg_cpu_mask = CPU_MASK_NONE;
+
+	int totalCPUs;
+	
+	for(totalCPUs = 0; totalCPUs < num_online_cpus(); totalCPUs++) {
+		if(totalCPUs < num_online_cpus()/2)
+			cpu_set(totalCPUs, bg_cpu_mask);
+		else
+			cpu_set(totalCPUs, fg_cpu_mask);	
+	}
+
 	/* Move init over to a non-isolated CPU */
 	if (set_cpus_allowed_ptr(current, non_isolated_cpus) < 0)
 		BUG();
@@ -7403,6 +7415,31 @@ void sched_move_task(struct task_struct *tsk)
 
 	rq = task_rq_lock(tsk, &flags);
 
+	if(tsk->policy == SCHED_GRR) {
+		char group_path[1024];
+		if (!(task_group(tsk))->css.cgroup) {
+			group_path[0] = '\0';
+		}
+		else
+			cgroup_path(task_group(tsk)->css.cgroup, group_path, 1024);
+		printk("changing cgroup of %d to %s\n", tsk->pid, group_path);
+		char mask_str[1024];
+		cpulist_scnprintf(mask_str, 1024, &bg_cpu_mask);
+		printk("bg mask: %s\n", mask_str);
+		cpulist_scnprintf(mask_str, 1024, &fg_cpu_mask);
+		printk("fg mask: %s\n", mask_str);
+		/* 
+		 * change the SE group based on cgroup string
+		 * based on length
+		 * group 0 = FG (includes sys)
+		 * group 1 = BG
+		 */
+		if(strlen(group_path) < 6)
+			tsk->grr.group = 0;
+		else
+			tsk->grr.group = 1;
+	}
+
 	running = task_current(rq, tsk);
 	on_rq = tsk->on_rq;
 
@@ -7778,7 +7815,6 @@ static void cpu_cgroup_attach(struct cgroup *cgrp,
 			      struct cgroup_taskset *tset)
 {
 	struct task_struct *task;
-
 	cgroup_taskset_for_each(task, cgrp, tset)
 		sched_move_task(task);
 }

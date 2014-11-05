@@ -319,6 +319,9 @@ struct grr_rq {
 	raw_spinlock_t grr_rq_lock;
 };
 
+static cpumask_t bg_cpu_mask;
+static cpumask_t fg_cpu_mask;
+
 #ifdef CONFIG_SMP
 
 /*
