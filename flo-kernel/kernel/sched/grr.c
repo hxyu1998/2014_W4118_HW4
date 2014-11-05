@@ -369,8 +369,15 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 
 	min_loading = LONG_MAX;
 	idle_cpu = -1;
+	cpumask_t allowed_cpus;
+
+	if (p->grr.group == 0)
+		allowed_cpus = fg_cpu_mask;
+	else
+		allowed_cpus = bg_cpu_mask;
+
 	for_each_online_cpu(cpu) {
-		if (!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+		if (!cpumask_test_cpu(cpu, &allowed_cpus))
 			continue;
 
 		rq = cpu_rq(cpu);
