@@ -174,6 +174,17 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 	maxcpu = this_cpu;
 	mincpu = this_cpu;
 	for_each_online_cpu(tempcpu) {
+		
+	/*  for part three
+		if (cpu_isset(this_cpu,fg_cpu_mask)) {
+			if (!cpumask_test_cpu(tempcpu, &fg_cpu_mask))
+				continue;
+		}
+		else {
+			if (!cpumask_test_cpu(tempcpu, &bg_cpu_mask))
+				continue;
+		}
+	*/
 		busiest = cpu_rq(tempcpu);
 		grr_rq = &busiest->grr;
 		temp = grr_rq->grr_nr_running;
