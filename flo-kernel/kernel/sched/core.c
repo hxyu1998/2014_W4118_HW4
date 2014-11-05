@@ -99,6 +99,8 @@
 
 SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 {
+	if (numCPU == num_online_cpus())
+		return -1;
 	if (group == 2) { /* numCPU for background */
 		int i;
 
