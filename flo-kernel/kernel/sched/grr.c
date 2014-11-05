@@ -166,7 +166,7 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			int *balance)
 {
 	struct grr_rq *grr_rq;
-	int tempcpu = 0, temp = 0,
+	int tempcpu = 0, temp = 0;
 	int maxcpu = 0, mincpu = 0, max = 0, min = INT_MAX;
 	struct rq *busiest;
 
