@@ -7383,6 +7383,20 @@ void sched_move_task(struct task_struct *tsk)
 
 	rq = task_rq_lock(tsk, &flags);
 
+	if(tsk->policy == SCHED_GRR) {
+		char group_path[1024];
+		if (!(task_group(tsk))->css.cgroup) {
+			group_path[0] = '\0';
+		}
+		else
+			cgroup_path(task_group(tsk)->css.cgroup, group_path, 1024);
+		printk("changing cgroup of %d to %s\n", tsk->pid, group_path);
+		if(strlen(group_path) < 6)
+			printk("changing to GROUP 0 - FG\n");
+		else
+			printk("changing to GROUP 1 - BG\n");
+	}
+
 	running = task_current(rq, tsk);
 	on_rq = tsk->on_rq;
 
@@ -7758,7 +7772,6 @@ static void cpu_cgroup_attach(struct cgroup *cgrp,
 			      struct cgroup_taskset *tset)
 {
 	struct task_struct *task;
-
 	cgroup_taskset_for_each(task, cgrp, tset)
 		sched_move_task(task);
 }
