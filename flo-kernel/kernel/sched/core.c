@@ -7391,10 +7391,16 @@ void sched_move_task(struct task_struct *tsk)
 		else
 			cgroup_path(task_group(tsk)->css.cgroup, group_path, 1024);
 		printk("changing cgroup of %d to %s\n", tsk->pid, group_path);
+		/* 
+		 * change the SE group based on cgroup string
+		 * based on length
+		 * group 0 = FG (includes sys)
+		 * group 1 = BG
+		 */
 		if(strlen(group_path) < 6)
-			printk("changing to GROUP 0 - FG\n");
+			tsk->grr.group = 0;
 		else
-			printk("changing to GROUP 1 - BG\n");
+			tsk->grr.group = 1;
 	}
 
 	running = task_current(rq, tsk);
