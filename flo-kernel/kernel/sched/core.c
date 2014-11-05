@@ -99,30 +99,28 @@
 
 SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 {
-	/* numCPU for background */
-if (group == 2) {
-	int i;
-	for(i=0 ; i < num_online_cpus() ; i++) {
-		if (i < numCPU)
-			cpu_set(i,bg_cpu_mask);
-		else
-			cpu_set(i,fg_cpu_mask);
-	}
-}
-	/* numCPU for foreground */
-else if (group == 1) {
-	int i;
-	for(i=0 ; i < num_online_cpus() ; i++) {
-		if (i < num_online_cpus()-numCPU)
-			cpu_set(i,bg_cpu_mask);
-                else
-                        cpu_set(i,fg_cpu_mask);
-	}
-}
-else 
-	return -1;
+	if (group == 2) { /* numCPU for background */
+		int i;
 
-	return 0;
+		for (i = 0 ; i < num_online_cpus() ; i++) {
+			if (i < numCPU)
+				cpu_set(i, bg_cpu_mask);
+			else
+				cpu_set(i, fg_cpu_mask);
+		}
+		return 0;
+	} else if (group == 1) { /* numCPU for foreground */
+		int i;
+
+		for (i = 0 ; i < num_online_cpus() ; i++) {
+			if (i < num_online_cpus() - numCPU)
+				cpu_set(i, bg_cpu_mask);
+			else
+				cpu_set(i, fg_cpu_mask);
+		}
+		return 0;
+	}
+	return -1;
 }
 /*sched_set_CPUgroup: 378*/
 
