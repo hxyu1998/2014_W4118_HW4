@@ -99,23 +99,30 @@
 
 SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 {
-//	int max_online_cpu = num_online_cpus();
-	struct task_struct *p = current;
-	struct task_group *tg = task_group(p);
-
-	struct cgroup *cg = tg->css.cgroup;
-	int nr_task = cgroup_task_count(cg);
-
-	int i = 1;
-	struct cgroup_iter iter;
-	struct task_struct *pt;
-	cgroup_iter_start(cg, &iter);
-	while (pt = cgroup_iter_next(cg, &iter)) {
-		printk("%d pid: %d\n", i, (int)pt->pid);
-		i++;
+	/* numCPU for background */
+if (group == 2) {
+	int i;
+	for(i=0 ; i < num_online_cpus() ; i++) {
+		if (i < numCPU)
+			cpu_set(i,bg_cpu_mask);
+		else
+			cpu_set(i,fg_cpu_mask);
 	}
-	cgroup_iter_end(cg, &iter);
-	return nr_task;
+}
+	/* numCPU for foreground */
+else if (group == 1) {
+	int i;
+	for(i=0 ; i < num_online_cpus() ; i++) {
+		if (i < num_online_cpus()-numCPU)
+			cpu_set(i,bg_cpu_mask);
+                else
+                        cpu_set(i,fg_cpu_mask);
+	}
+}
+else 
+	return -1;
+
+	return 0;
 }
 /*sched_set_CPUgroup: 378*/
 
