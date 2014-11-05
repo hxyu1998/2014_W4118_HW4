@@ -6931,6 +6931,18 @@ void __init sched_init_smp(void)
 
 	init_hrtick();
 
+	bg_cpu_mask = CPU_MASK_NONE;
+	fg_cpu_mask = CPU_MASK_NONE;
+
+	int totalCPUs;
+	
+	for(totalCPUs = 0; totalCPUs < num_online_cpus(); totalCPUs++) {
+		if(totalCPUs < num_online_cpus()/2)
+			cpu_set(totalCPUs, bg_cpu_mask);
+		else
+			cpu_set(totalCPUs, fg_cpu_mask);	
+	}
+
 	/* Move init over to a non-isolated CPU */
 	if (set_cpus_allowed_ptr(current, non_isolated_cpus) < 0)
 		BUG();
@@ -7392,6 +7404,11 @@ void sched_move_task(struct task_struct *tsk)
 		else
 			cgroup_path(task_group(tsk)->css.cgroup, group_path, 1024);
 		printk("changing cgroup of %d to %s\n", tsk->pid, group_path);
+		char mask_str[1024];
+		cpulist_scnprintf(mask_str, 1024, &bg_cpu_mask);
+		printk("bg mask: %s\n", mask_str);
+		cpulist_scnprintf(mask_str, 1024, &fg_cpu_mask);
+		printk("fg mask: %s\n", mask_str);
 		/* 
 		 * change the SE group based on cgroup string
 		 * based on length
