@@ -1,6 +1,8 @@
 /* new GRR schedule */
 #include "sched.h"
 #include <linux/interrupt.h>
+#include <linux/syscalls.h>
+#include <trace/events/sched.h>
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
@@ -363,6 +365,10 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 	min_loading = LONG_MAX;
 	idle_cpu = -1;
 	for_each_online_cpu(cpu) {
+
+	if (!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+		continue;
+
 		rq = cpu_rq(cpu);
 		grr_rq = &rq->grr;
 		loading = grr_rq->grr_nr_running;

@@ -1252,7 +1252,6 @@ struct sched_rt_entity {
 struct sched_grr_entity {
 	struct list_head run_list;
 	unsigned int time_slice;
-	unsigned int group;
 };
 
 /*
