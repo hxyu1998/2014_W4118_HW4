@@ -4,7 +4,6 @@
 
 static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	trace_printk("entering dequeue...\n");	
 	struct sched_grr_entity *grr_se;
 	struct grr_rq *grr_rq;
 
@@ -16,12 +15,10 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	--grr_rq->grr_nr_running;
 	raw_spin_unlock(&grr_rq->grr_rq_lock);
 	dec_nr_running(rq);
-	trace_printk("leaving dequeue...\n");
 }
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	trace_printk("PID %d entering enqueue...\n", p->pid);
 	/* maybe this can simplified 
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
@@ -46,12 +43,10 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	grr_rq->grr_nr_running++;
 	raw_spin_unlock(&grr_rq->grr_rq_lock);	
 	inc_nr_running(rq);
-	trace_printk("leaving enqueue...\n");
 }
 
 static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	trace_printk("entering requeue...\n");
 	struct sched_grr_entity *grr_se;
 	struct grr_rq *grr_rq;
 	struct list_head *head;
@@ -66,7 +61,6 @@ static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	raw_spin_lock(&grr_rq->grr_rq_lock);
 	list_move_tail(&grr_se->run_list, head);
 	raw_spin_unlock(&grr_rq->grr_rq_lock);
-	trace_printk("leaving requeue...\n");
 }
 
 static void yield_task_grr(struct rq *rq)
@@ -76,7 +70,6 @@ static void yield_task_grr(struct rq *rq)
 
 static struct task_struct *pick_next_task_grr(struct rq *rq)
 {
-	trace_printk("entering pick_next_task_grr...\n");
 	struct sched_grr_entity *grr_se;
 	struct task_struct *p;
 	struct grr_rq *grr_rq;
@@ -90,7 +83,6 @@ static struct task_struct *pick_next_task_grr(struct rq *rq)
 	queue = &grr_rq->grr_rq_list;
 	grr_se = list_entry(queue->next, struct sched_grr_entity, run_list);
 	return container_of(grr_se, struct task_struct, grr);
-	trace_printk("leaving pick_next_task_grr...\n");
 }
 
 static void put_prev_task_grr(struct rq *rq, struct task_struct *prev)
@@ -117,13 +109,11 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 /*Ethan: this seems is used for group task schedule.*/
 static void set_curr_task_grr(struct rq *rq)
 {	
-	trace_printk("entering set_curr_task_grr...\n");
 	struct task_struct *p;
 	
 	p = rq->curr;
 	p->se.exec_start = rq->clock_task;
 	
-	trace_printk("leaving set_curr_task_grr...\n");
 }
 
 static void check_preempt_curr_grr(struct rq *rq,
@@ -134,13 +124,11 @@ static void check_preempt_curr_grr(struct rq *rq,
 /*Ethan: this seems is used for group task schedule.*/
 static void switched_to_grr(struct rq *rq, struct task_struct *p)
 {
-	trace_printk("entering switched_to_grr...\n");
 	struct sched_grr_entity *grr_se;
 
 	grr_se = &p->grr;
 	grr_se->time_slice = GRR_TIMESLICE;
  	INIT_LIST_HEAD(&grr_se->run_list);
-	trace_printk("leaving switched_to_grr...\n");
 }
 
 static void prio_changed_grr(struct rq *rq, struct task_struct *p, int old)
@@ -159,11 +147,9 @@ static unsigned int get_rr_interval_grr(struct rq *rq, struct task_struct *t)
 
 void init_grr_rq(struct grr_rq *grr_rq)
 {
-	printk("entering init_grr_rq...\n");
 	grr_rq->grr_nr_running = 0;
 	INIT_LIST_HEAD(&grr_rq->grr_rq_list);
 	raw_spin_lock_init(&grr_rq->grr_rq_lock);
-	printk("leaving init_grr_rq...\n");
 }
 
 /*====================For SMP====================*/
@@ -177,7 +163,6 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
 			int *balance)
 {
-	trace_printk("entering balance...\n");
 	struct grr_rq *grr_rq;	
 	int tempcpu = 0, temp = 0, maxcpu = 0, mincpu = 0, max = 0, min = INT_MAX;
 	struct rq *busiest;
@@ -199,10 +184,10 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			mincpu = tempcpu;
 		}
 	}
-	trace_printk("exiting balance...\n");
+	trace_printk("MAX: %d MIN: %d\n", max, min);
 	if (min != max-1 && min != max) {
 		trace_printk("***moving task***\n");
-		struct task_struct *taskToMove;
+		struct sched_grr_entity *seToMove, *dummy;
 		struct rq *dst_rq;
 		struct rq *src_rq;
 		unsigned long flags;
@@ -210,21 +195,23 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 		dst_rq = cpu_rq(mincpu);
 		local_irq_save(flags);
 		double_rq_lock(src_rq, dst_rq);
-		list_for_each_entry( taskToMove, &src_rq->grr.grr_rq_list, grr.run_list) {
+		list_for_each_entry_safe( seToMove, dummy, &src_rq->grr.grr_rq_list, run_list) {
 			/* check if task can be moved 
 			 * do not move tasks that are running
 			 * 		OR
 			 * cpus_allowed does not allow moving
 			 * to least busy CPU
 			 */
-			if (!cpumask_test_cpu(dst_rq, tsk_cpus_allowed(taskToMove)))
+			struct task_struct * taskToMove;
+			taskToMove = container_of(seToMove, struct task_struct, grr);
+			if (!cpumask_test_cpu(mincpu, tsk_cpus_allowed(taskToMove)))
 				continue;
 			if (task_running(src_rq, taskToMove))
 				continue;
-			/* Seems to freeze here :( */
 			deactivate_task(src_rq, taskToMove, 0);
 			set_task_cpu(taskToMove, mincpu);
 			activate_task(dst_rq, taskToMove, 0);
+			resched_task(dst_rq->curr);
 			break;
 		}
 		double_rq_unlock(src_rq, dst_rq);
