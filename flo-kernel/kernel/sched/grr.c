@@ -21,14 +21,14 @@ static void dequeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 
 static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 {
-	/* maybe this can simplified 
+	/* maybe this can simplified
 	struct sched_grr_entity *grr_se = &p->grr;
 	struct task_struct *p = container_of(grr_se, struct task_struct, rt);
 	struct rq *rq = task_rq(p);
 	struct grr_rq *grr_rq = rq->grr;
 	struct list_head *queue = grr_rq->grr_rq_list;
 	list_add(&grr_se->run_list, queue);
-	grr_rq->nr_running++; 	
+	grr_rq->nr_running++;
 	*/
 
 	struct sched_grr_entity *grr_se;
@@ -43,7 +43,7 @@ static void enqueue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 	raw_spin_lock(&grr_rq->grr_rq_lock);
 	list_add_tail(&grr_se->run_list, queue);
 	grr_rq->grr_nr_running++;
-	raw_spin_unlock(&grr_rq->grr_rq_lock);	
+	raw_spin_unlock(&grr_rq->grr_rq_lock);
 	inc_nr_running(rq);
 }
 
@@ -59,7 +59,7 @@ static void requeue_task_grr(struct rq *rq, struct task_struct *p, int flags)
 
 	if (sizeof(grr_rq->grr_nr_running) == 1)
 		return;
-	
+
 	raw_spin_lock(&grr_rq->grr_rq_lock);
 	list_move_tail(&grr_se->run_list, head);
 	raw_spin_unlock(&grr_rq->grr_rq_lock);
@@ -79,7 +79,7 @@ static struct task_struct *pick_next_task_grr(struct rq *rq)
 
 	grr_rq = &rq->grr;
 
-	if(!grr_rq->grr_nr_running)
+	if (!grr_rq->grr_nr_running)
 		return NULL;
 
 	queue = &grr_rq->grr_rq_list;
@@ -110,12 +110,12 @@ static void task_tick_grr(struct rq *rq, struct task_struct *p, int queued)
 
 /*Ethan: this seems is used for group task schedule.*/
 static void set_curr_task_grr(struct rq *rq)
-{	
+{
 	struct task_struct *p;
-	
+
 	p = rq->curr;
 	p->se.exec_start = rq->clock_task;
-	
+
 }
 
 static void check_preempt_curr_grr(struct rq *rq,
@@ -130,7 +130,7 @@ static void switched_to_grr(struct rq *rq, struct task_struct *p)
 
 	grr_se = &p->grr;
 	grr_se->time_slice = GRR_TIMESLICE;
- 	INIT_LIST_HEAD(&grr_se->run_list);
+	INIT_LIST_HEAD(&grr_se->run_list);
 }
 
 static void prio_changed_grr(struct rq *rq, struct task_struct *p, int old)
@@ -165,8 +165,9 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
 			int *balance)
 {
-	struct grr_rq *grr_rq;	
-	int tempcpu = 0, temp = 0, maxcpu = 0, mincpu = 0, max = 0, min = INT_MAX;
+	struct grr_rq *grr_rq;
+	int tempcpu = 0, temp = 0,
+	int maxcpu = 0, mincpu = 0, max = 0, min = INT_MAX;
 	struct rq *busiest;
 
 	tempcpu = this_cpu;
@@ -193,20 +194,25 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 		struct rq *dst_rq;
 		struct rq *src_rq;
 		unsigned long flags;
+
 		src_rq = cpu_rq(maxcpu);
 		dst_rq = cpu_rq(mincpu);
 		local_irq_save(flags);
 		double_rq_lock(src_rq, dst_rq);
-		list_for_each_entry_safe( seToMove, dummy, &src_rq->grr.grr_rq_list, run_list) {
-			/* check if task can be moved 
+		list_for_each_entry_safe(seToMove, dummy,
+				&src_rq->grr.grr_rq_list, run_list) {
+			/* check if task can be moved
 			 * do not move tasks that are running
-			 * 		OR
+			 *		OR
 			 * cpus_allowed does not allow moving
 			 * to least busy CPU
 			 */
-			struct task_struct * taskToMove;
-			taskToMove = container_of(seToMove, struct task_struct, grr);
-			if (!cpumask_test_cpu(mincpu, tsk_cpus_allowed(taskToMove)))
+			struct task_struct *taskToMove;
+
+			taskToMove = container_of(seToMove,
+						struct task_struct, grr);
+			if (!cpumask_test_cpu(mincpu,
+				tsk_cpus_allowed(taskToMove)))
 				continue;
 			if (task_running(src_rq, taskToMove))
 				continue;
@@ -219,7 +225,7 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 		double_rq_unlock(src_rq, dst_rq);
 		local_irq_restore(flags);
 	}
-		/*	
+		/*
 		if  (min != max-1 || min != max) {
 			struct grr_rq *toberemoved, *tobeincreased;
 			struct list_head *headnodermv, *headnodeinc;
@@ -284,9 +290,8 @@ static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
 				idle = CPU_NOT_IDLE;
 			sd->last_balance = jiffies;
 		}
-		if (need_serialize) {
+		if (need_serialize)
 			spin_unlock(&balancing);
-		}
 out:
 		if (time_after(next_balance, sd->last_balance + itvl)) {
 			next_balance = sd->last_balance + itvl;
@@ -365,9 +370,8 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 	min_loading = LONG_MAX;
 	idle_cpu = -1;
 	for_each_online_cpu(cpu) {
-
-	if (!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
-		continue;
+		if (!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+			continue;
 
 		rq = cpu_rq(cpu);
 		grr_rq = &rq->grr;
@@ -376,13 +380,12 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 		if (loading < min_loading) {
 			min_loading = loading;
 			idle_cpu = cpu;
-		} 
+		}
 	}
 
 	if (idle_cpu == -1)
 		return task_cpu(p);
-	else
-		return idle_cpu;
+	return idle_cpu;
 }
 
 #endif
@@ -408,7 +411,7 @@ const struct sched_class grr_sched_class = {
 
 	.set_curr_task		= set_curr_task_grr,
 	.task_tick		= task_tick_grr,
-	
+
 	.get_rr_interval	= get_rr_interval_grr,
 
 	.prio_changed		= prio_changed_grr,
@@ -422,11 +425,11 @@ void print_grr_stats(struct seq_file *m, int cpu)
 {
 	struct rq *rq;
 	struct grr_rq *grr_rq;
+
 	rq = cpu_rq(cpu);
 	rcu_read_lock();
-	for (grr_rq = &rq->grr; grr_rq; grr_rq = NULL) {
+	for (grr_rq = &rq->grr; grr_rq; grr_rq = NULL)
 		print_grr_rq(m, cpu, grr_rq);
-	}
 	rcu_read_unlock();
 }
 #endif
