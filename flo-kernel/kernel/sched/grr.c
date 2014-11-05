@@ -179,29 +179,60 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
 			int *balance)
 {
+	trace_printk("entering balance...\n");
 	struct grr_rq *grr_rq;	
-	int tempcpu = 0, temp = 0, maxcpu = 0, mincpu = 0, max = 0, min = 1000;
+	int tempcpu = 0, temp = 0, maxcpu = 0, mincpu = 0, max = 0, min = INT_MAX;
 	struct rq *busiest;
 
 	tempcpu = this_cpu;
 	maxcpu = this_cpu;
 	mincpu = this_cpu;
-	do {
-		for_each_online_cpu(tempcpu) {
-			busiest = cpu_rq(tempcpu);
-			grr_rq = &busiest->grr;
-			temp = grr_rq->grr_nr_running;
+	for_each_online_cpu(tempcpu) {
+		busiest = cpu_rq(tempcpu);
+		grr_rq = &busiest->grr;
+		temp = grr_rq->grr_nr_running;
 
-			if (max <= temp) {
-				max = temp;
-				maxcpu = tempcpu;
-			}
-			if (temp < min) {
-				min = temp;
-				mincpu = tempcpu;
-			}
+		if (max <= temp) {
+			max = temp;
+			maxcpu = tempcpu;
 		}
-	
+		if (temp < min) {
+			min = temp;
+			mincpu = tempcpu;
+		}
+	}
+	trace_printk("exiting balance...\n");
+	if (min != max-1 && min != max) {
+		trace_printk("***moving task***\n");
+		struct task_struct *taskToMove;
+		struct rq *dst_rq;
+		struct rq *src_rq;
+		unsigned long flags;
+		src_rq = cpu_rq(maxcpu);
+		dst_rq = cpu_rq(mincpu);
+		local_irq_save(flags);
+		double_rq_lock(src_rq, dst_rq);
+		list_for_each_entry( taskToMove, &src_rq->grr.grr_rq_list, grr.run_list) {
+			/* check if task can be moved 
+			 * do not move tasks that are running
+			 * 		OR
+			 * cpus_allowed does not allow moving
+			 * to least busy CPU
+			 */
+			if (!cpumask_test_cpu(dst_rq, tsk_cpus_allowed(taskToMove)))
+				continue;
+			if (task_running(src_rq, taskToMove))
+				continue;
+			/* Seems to freeze here :( */
+			deactivate_task(src_rq, taskToMove, 0);
+			set_task_cpu(taskToMove, mincpu);
+			activate_task(dst_rq, taskToMove, 0);
+			break;
+		}
+		double_rq_unlock(src_rq, dst_rq);
+		local_irq_restore(flags);
+	}
+		/*	
 		if  (min != max-1 || min != max) {
 			struct grr_rq *toberemoved, *tobeincreased;
 			struct list_head *headnodermv, *headnodeinc;
@@ -216,16 +247,16 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 
 			list_add_tail(headnodermv->next, headnodeinc);
 			tobeincreased->grr_nr_running++;
-			inc_nr_running(cpu_rq(min));
+			inc_nr_running(cpu_rq(mincpu));
 
 			list_del_init(headnodermv->next);
 			--toberemoved->grr_nr_running;
-			dec_nr_running(cpu_rq(max));
+			dec_nr_running(cpu_rq(maxcpu));
 
 			raw_spin_unlock(&tobeincreased->grr_rq_lock);
 			raw_spin_unlock(&toberemoved->grr_rq_lock);
-		}
-	} while (min != max-1 || min != max);
+		}*/
+	return 1;
 }
 
 static void rebalance_domains_grr(int cpu, enum cpu_idle_type idle)
