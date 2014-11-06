@@ -97,6 +97,9 @@
 #include <linux/cgroup.h>
 
 
+cpumask_t bg_cpu_mask;
+cpumask_t fg_cpu_mask;
+
 SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 {
 	if (numCPU == num_online_cpus())
