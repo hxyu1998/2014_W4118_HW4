@@ -184,7 +184,6 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 	}
 	char mask_str[1024];
 	cpulist_scnprintf(mask_str, 1024, &eligibleCPUs);
-	trace_printk("eligible cpus: %s\n", mask_str);
 	for_each_cpu(tempcpu, &eligibleCPUs) {
 		
 		busiest = cpu_rq(tempcpu);
@@ -200,9 +199,7 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 			mincpu = tempcpu;
 		}
 	}
-	trace_printk("MAX: %d MIN: %d\n", max, min);
 	if (min != max-1 && min != max) {
-		trace_printk("***moving task***\n");
 		struct sched_grr_entity *seToMove, *dummy;
 		struct rq *dst_rq;
 		struct rq *src_rq;
