@@ -100,35 +100,6 @@
 cpumask_t bg_cpu_mask;
 cpumask_t fg_cpu_mask;
 
-SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
-{
-	if (numCPU == num_online_cpus())
-		return -1;
-	if (group == 2) { /* numCPU for background */
-		int i;
-
-		for (i = 0 ; i < num_online_cpus() ; i++) {
-			if (i < numCPU)
-				cpu_set(i, bg_cpu_mask);
-			else
-				cpu_set(i, fg_cpu_mask);
-		}
-		return 0;
-	} else if (group == 1) { /* numCPU for foreground */
-		int i;
-
-		for (i = 0 ; i < num_online_cpus() ; i++) {
-			if (i < num_online_cpus() - numCPU)
-				cpu_set(i, bg_cpu_mask);
-			else
-				cpu_set(i, fg_cpu_mask);
-		}
-		return 0;
-	}
-	return -1;
-}
-/*sched_set_CPUgroup: 378*/
-
 ATOMIC_NOTIFIER_HEAD(migration_notifier_head);
 
 void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period)
@@ -8409,3 +8380,72 @@ struct cgroup_subsys cpuacct_subsys = {
 	.subsys_id = cpuacct_subsys_id,
 };
 #endif	/* CONFIG_CGROUP_CPUACCT */
+
+
+
+SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
+{
+	if (numCPU >= num_online_cpus())
+		return -EINVAL;
+	if (group == 2) { /* numCPU for background */
+		int i;
+
+		for (i = 0 ; i < num_online_cpus() ; i++) {
+			if (i < numCPU)
+				cpu_set(i, bg_cpu_mask);
+			else
+				cpu_set(i, fg_cpu_mask);
+		}
+	} else if (group == 1) { /* numCPU for foreground */
+		int i;
+
+		for (i = 0 ; i < num_online_cpus() ; i++) {
+			if (i < num_online_cpus() - numCPU)
+				cpu_set(i, bg_cpu_mask);
+			else
+				cpu_set(i, fg_cpu_mask);
+		}
+	}
+	int cpu;
+	for_each_online_cpu(cpu) {
+		int dst_cpu;
+		struct rq *dst_rq;
+		struct rq *src_rq = cpu_rq(cpu);
+		unsigned long flags;
+		struct sched_grr_entity *seToMove, *dummy;
+
+		/* not sure about how to lock here. 
+		 * dont think double_lock works because we 
+		 * don't know the dst RQ.
+		 * need the task struct first but we find that
+		 * within the loop
+		 */
+
+		list_for_each_entry_safe(seToMove, dummy,
+				&src_rq->grr.grr_rq_list, run_list) {
+			struct task_struct *taskToMove;
+			taskToMove = container_of(seToMove, struct task_struct, grr);
+			/* if this task is already in an allowable cpu continue */
+			if(taskToMove->grr.group == 0) {
+				if(cpu_isset(task_cpu(taskToMove), bg_cpu_mask))
+				continue;
+			}
+			else {
+				if(cpu_isset(task_cpu(taskToMove), fg_cpu_mask))
+				continue;
+			}
+			/*otherwise find a new CPU and add it to that RQ*/	
+			int newCPU;
+			/*what do we do with tasks that are running?
+			 * and what are flags for select_task_rq?
+			 */
+			newCPU = select_task_rq(taskToMove, 0, 0);
+			struct rq *new_rq = cpu_rq(newCPU);
+			deactivate_task(src_rq, taskToMove, 0);
+			set_task_cpu(taskToMove, newCPU);
+			activate_task(new_rq, taskToMove, 0);
+			resched_task(new_rq->curr);
+		}		
+	}
+	return 0;
+}
