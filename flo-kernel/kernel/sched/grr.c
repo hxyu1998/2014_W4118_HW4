@@ -234,30 +234,6 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 		double_rq_unlock(src_rq, dst_rq);
 		local_irq_restore(flags);
 	}
-		/*
-		if  (min != max-1 || min != max) {
-			struct grr_rq *toberemoved, *tobeincreased;
-			struct list_head *headnodermv, *headnodeinc;
-
-			toberemoved = &cpu_rq(maxcpu)->grr;
-			tobeincreased = &cpu_rq(mincpu)->grr;
-			headnodermv = &toberemoved->grr_rq_list;
-			headnodeinc = &tobeincreased->grr_rq_list;
-
-			raw_spin_lock(&toberemoved->grr_rq_lock);
-			raw_spin_lock(&tobeincreased->grr_rq_lock);
-
-			list_add_tail(headnodermv->next, headnodeinc);
-			tobeincreased->grr_nr_running++;
-			inc_nr_running(cpu_rq(mincpu));
-
-			list_del_init(headnodermv->next);
-			--toberemoved->grr_nr_running;
-			dec_nr_running(cpu_rq(maxcpu));
-
-			raw_spin_unlock(&tobeincreased->grr_rq_lock);
-			raw_spin_unlock(&toberemoved->grr_rq_lock);
-		}*/
 	return 1;
 }
 
