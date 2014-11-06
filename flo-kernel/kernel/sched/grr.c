@@ -1,5 +1,6 @@
 /* new GRR schedule */
 #include "sched.h"
+#include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <linux/syscalls.h>
 #include <trace/events/sched.h>
@@ -173,18 +174,19 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 	tempcpu = this_cpu;
 	maxcpu = this_cpu;
 	mincpu = this_cpu;
-	for_each_online_cpu(tempcpu) {
+	cpumask_t eligibleCPUs;
+	
+	if (cpu_isset(this_cpu,fg_cpu_mask)) {
+		eligibleCPUs = fg_cpu_mask;
+	}
+	else {
+		eligibleCPUs = bg_cpu_mask;
+	}
+	char mask_str[1024];
+	cpulist_scnprintf(mask_str, 1024, &eligibleCPUs);
+	trace_printk("eligible cpus: %s\n", mask_str);
+	for_each_cpu(tempcpu, &eligibleCPUs) {
 		
-	/*  for part three
-		if (cpu_isset(this_cpu,fg_cpu_mask)) {
-			if (!cpumask_test_cpu(tempcpu, &fg_cpu_mask))
-				continue;
-		}
-		else {
-			if (!cpumask_test_cpu(tempcpu, &bg_cpu_mask))
-				continue;
-		}
-	*/
 		busiest = cpu_rq(tempcpu);
 		grr_rq = &busiest->grr;
 		temp = grr_rq->grr_nr_running;
@@ -222,8 +224,7 @@ static int load_balance_grr(int this_cpu, struct rq *this_rq,
 
 			taskToMove = container_of(seToMove,
 						struct task_struct, grr);
-			if (!cpumask_test_cpu(mincpu,
-				tsk_cpus_allowed(taskToMove)))
+			if (!cpumask_test_cpu(mincpu, tsk_cpus_allowed(taskToMove)))
 				continue;
 			if (task_running(src_rq, taskToMove))
 				continue;
@@ -387,9 +388,7 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 	else
 		allowed_cpus = bg_cpu_mask;
 
-	for_each_online_cpu(cpu) {
-		if (!cpumask_test_cpu(cpu, &allowed_cpus))
-			continue;
+	for_each_cpu(cpu, &allowed_cpus) {
 
 		rq = cpu_rq(cpu);
 		grr_rq = &rq->grr;
@@ -400,7 +399,6 @@ static int select_task_rq_grr(struct task_struct *p, int sd_flag, int flags)
 			idle_cpu = cpu;
 		}
 	}
-
 	if (idle_cpu == -1)
 		return task_cpu(p);
 	return idle_cpu;
