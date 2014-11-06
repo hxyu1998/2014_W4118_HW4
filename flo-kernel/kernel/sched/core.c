@@ -8379,18 +8379,16 @@ struct cgroup_subsys cpuacct_subsys = {
 };
 #endif	/* CONFIG_CGROUP_CPUACCT */
 
-
-
 SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 {
 	if (current_uid() != 0)
 		return -EACCES;
 
 	cpumask_t temp_bg_mask, temp_fg_mask;
+
 	temp_bg_mask = CPU_MASK_NONE;
 	temp_fg_mask = CPU_MASK_NONE;
-
-	if (numCPU >= num_online_cpus() 
+	if (numCPU >= num_online_cpus()
 		|| numCPU <= 0
 		|| group > 2 || group < 1)
 		return -EINVAL;
@@ -8414,38 +8412,40 @@ SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 				cpu_set(i, temp_fg_mask);
 		}
 	}
-	char mask_str[1024];
-	cpulist_scnprintf(mask_str, 1024, &temp_bg_mask);
-	//printk("new bg mask: %s\n", mask_str);
-	cpulist_scnprintf(mask_str, 1024, &temp_fg_mask);
-	//printk("new fg mask: %s\n", mask_str);
-	int src_cpu;
 
+	char mask_str[1024];
+
+	cpulist_scnprintf(mask_str, 1024, &temp_bg_mask);
+	/*printk("new bg mask: %s\n", mask_str);*/
+	cpulist_scnprintf(mask_str, 1024, &temp_fg_mask);
+	/*printk("new fg mask: %s\n", mask_str);*/
+
+	int src_cpu;
 	/* XOR to find which CPUs have changed
 	 * and require tasks to move
 	 */
 	cpumask_t move_mask = CPU_MASK_NONE;
-	cpumask_xor(&move_mask, &temp_bg_mask, &bg_cpu_mask);
-
 	cpumask_t eligible_cpus = CPU_MASK_NONE;
+
+	cpumask_xor(&move_mask, &temp_bg_mask, &bg_cpu_mask);
 	if(cpumask_intersects(&move_mask, &bg_cpu_mask)) {
 		eligible_cpus = temp_bg_mask;
 		printk("moving tasks to bg\n");
-	}
-	else {
-		eligible_cpus = temp_fg_mask;	
-		printk("moving tasks to fg\n");
+	} else {
+		eligible_cpus = temp_fg_mask;
+		pr_debug("moving tasks to fg\n");
 	}
 	cpulist_scnprintf(mask_str, 1024, &eligible_cpus);
-	printk("moving tasks to: %s\n", mask_str);
+	pr_debug("moving tasks to: %s\n", mask_str);
 
 	struct rq *rq;
 	struct grr_rq *grr_rq;
 	int cpu, dst_cpu;
 	long temp, min;
+
 	min = LONG_MAX;
 	dst_cpu = -1;
-	printk("finding min task\n");
+	pr_debug("finding min task\n");
 	for_each_cpu(cpu, &eligible_cpus) {
 		rq = cpu_rq(cpu);
 		grr_rq = &rq->grr;
@@ -8455,36 +8455,39 @@ SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 			dst_cpu = cpu;
 		}
 	}
-	
-	struct rq *dst_rq = cpu_rq(dst_cpu);
-	printk("moving tasks...\n");
-	for_each_cpu(src_cpu, &move_mask) {
 
+	struct rq *dst_rq = cpu_rq(dst_cpu);
+
+	pr_debug("moving tasks...\n");
+	for_each_cpu(src_cpu, &move_mask) {
 		unsigned long flags;
 		struct rq *src_rq = cpu_rq(src_cpu);
 		struct sched_grr_entity *seToMove, *dummy;
 
-		printk("grabbing lock..\n");
+		pr_debug("grabbing lock..\n");
 		local_irq_save(flags);
-		double_rq_lock(src_rq, dst_rq);	
-		printk("iterating task list...\n");
+		double_rq_lock(src_rq, dst_rq);
+		pr_debug("iterating task list...\n");
 		list_for_each_entry_safe(seToMove, dummy,
 				&src_rq->grr.grr_rq_list, run_list) {
 			struct task_struct *taskToMove;
-			taskToMove = container_of(seToMove, struct task_struct, grr);
-			if (!cpumask_test_cpu(dst_cpu, tsk_cpus_allowed(taskToMove)))
-                                continue;
-                        if (task_running(src_rq, taskToMove))
-                                continue;
-			printk("deactivating..\n");
+
+			taskToMove = container_of(seToMove,
+						struct task_struct, grr);
+			if (!cpumask_test_cpu(dst_cpu,
+					tsk_cpus_allowed(taskToMove)))
+				continue;
+			if (task_running(src_rq, taskToMove))
+				continue;
+			pr_debug("deactivating..\n");
 			deactivate_task(src_rq, taskToMove, 0);
-			printk("setting cpu...\n");
+			pr_debug("setting cpu...\n");
 			set_task_cpu(taskToMove, dst_cpu);
-			printk("activating...\n");
+			pr_debug("activating...\n");
 			activate_task(dst_rq, taskToMove, 0);
-			printk("resched...\n");
+			pr_debug("resched...\n");
 			resched_task(dst_rq->curr);
-		}		
+		}
 		double_rq_unlock(src_rq, dst_rq);
 		local_irq_restore(flags);
 	}
