@@ -8460,16 +8460,12 @@ SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 	printk("moving tasks...\n");
 	for_each_cpu(src_cpu, &move_mask) {
 
+		unsigned long flags;
 		struct rq *src_rq = cpu_rq(src_cpu);
 		struct sched_grr_entity *seToMove, *dummy;
 
-		/* not sure about how to lock here. 
-		 * dont think double_lock works because we 
-		 * don't know the dst RQ.
-		 * need the task struct first but we find that
-		 * within the loop
-		 */
 		printk("grabbing lock..\n");
+		local_irq_save(flags);
 		double_rq_lock(src_rq, dst_rq);	
 		printk("iterating task list...\n");
 		list_for_each_entry_safe(seToMove, dummy,
@@ -8490,6 +8486,7 @@ SYSCALL_DEFINE2(sched_set_CPUgroup, int, numCPU, int, group)
 			resched_task(dst_rq->curr);
 		}		
 		double_rq_unlock(src_rq, dst_rq);
+		local_irq_restore(flags);
 	}
 	bg_cpu_mask = temp_bg_mask;
 	fg_cpu_mask = temp_fg_mask;
