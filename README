@@ -1,0 +1,11 @@
+assignment 4
+
+We used the following references:
+http://www.criticalblue.com/news/wp-content/uploads/2013/12/linux_scheduler_notes_final.pdf
+http://www.embedded.com/design/operating-systems/4204971/Real-Time-Linux-Scheduling-Part-2
+
+We modified the kernel to set the init scheduler to the newly implemented GRR scheduler. Thus all tasks are running GRR. We initially tested witha  test program that called set_scheduler. After seeing that it worked we went ahead and replaced teh default scheduler. 
+
+We also modified debug.c in kernel/sched to see the output of the GRR RQs. We wanted to make sure our load balancing and scheduler were working correctly. This was important in part 2 when we wanted to make sure we only added tasks to specific CPUs. One thing we noticed was that sometimes workers with a foreground CGROUP ("/") are set on CPUs that it's not allowed to run on based on the new CPU mask for part 2. However, after trying to move it we realized that task_cpus_allowed did not allow the task to be moved to other CPUs or our kernel would panic. During office hours Jintack assured that this was ok and that kworkers are limited to which CPUs they can run on sometimes. 
+
+For part 1 the last working commit was: 625dcc32bdc63a1b4072adb83c1b7424c1eab6b6
