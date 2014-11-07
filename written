@@ -1,0 +1,23 @@
+Performance Tests
+
+We performed various tests using the following applications: Geekbench 3, Quadrant, and Pi. We first ran each test with 1 CPU assigned to foreground tasks and 3 CPUs assigned to background tasks. We then switched this using the sched_set_CPUgroup() system call. To keep track of our CPUs we modified sched_debug to print out the tasks running on the grr_rq per CPU. We used this to verify our 3-1 split or 2-2 split initially. We then made sure that our sys call was affecting the CPUs in the right way.
+
+Geekbench:
+1 Foreground - 3 background: Multicore Score was 571.
+3 Foreground - 1 background: Multicore Score was 1259.
+
+The "single-core" score was roughly the same 568/597. With 3 CPUs running foreground vs background the score increased by more than 2x.
+
+Quadrant:
+1 Foreground - 3 Background: CPU SCore was 3535
+3 Foreground - 1 Background: CPU Score was 9081
+
+We can see here that the CPU score does increase by approximately 3x when increasing the foreground CPUs from 1 to 3.
+
+Pi:
+1 Foreground - 3 Background: Pi calculated to 5,000,000 in 45 seconds
+3 Foreground - 1 Background: Pi calculated to 5,000,000 in 19.737 seconds
+
+-------
+
+When open a new task we seemed to be able to notice the most "lag" when reducing the CPUs for foreground tasks. When launching a new task like gMail or YOutube we noticed it took slightly longer to launch then usual. We also notice that on launch is when we see the most background tasks running and then they go away.  
